@@ -1,0 +1,46 @@
+name: Squash TM CI/CD w/ docker
+
+concurrency:
+  group: testing
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: main
+
+permissions:
+  contents: read
+
+env:
+  SERVER_USER: ${{ secrets.SERVER_USER }}
+  SERVER_IP: ${{ secrets.SERVER_IP }}
+  SSH_KEY_VPS: ${{ secrets.SSH_KEY_VPS }}
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy CI env
+        run: cp .env.ci .env
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate --strict
+
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: PHPStan Analysis
+        run: vendor/bin/phpstan analyse app/
