@@ -1,7 +1,7 @@
 #!/bin/bash
 
 APP_URL=$(grep '^APP_URL=' .env | cut -d '=' -f2)
-BASE_URL="${APP_URL%\"}" 
+BASE_URL="${APP_URL%\"}"
 EMAIL="test@example.com"
 PASSWORD="password"
 
