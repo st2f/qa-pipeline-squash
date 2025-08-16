@@ -1,80 +1,67 @@
 services:
 
-    php_qa:
-        build:
-            context: .
-            dockerfile: docker/php/Dockerfile
-        container_name: php_qa
-        volumes:
-            - ./:/var/www
-        networks:
-            - api_net
+    ### PostgreSQL for Squash TM
+    squash-tm-pg:
+        container_name: squash-tm-pg
+        image: postgres:14
+        restart: unless-stopped
         environment:
-            PHP_IDE_CONFIG: serverName=Docker # For Xdebug
-        restart: unless-stopped
-
-    nginx_qa:
-        image: nginx
-        container_name: nginx_qa
-        volumes:
-            - ./public:/var/www/public
-            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
-        depends_on:
-            - php_qa
-        restart: unless-stopped
-        labels:
-            - traefik.enable=true
-            - traefik.http.routers.nginx_qa.tls=true
-            - traefik.http.routers.nginx_qa.rule=Host(`${NGINX_HOST}`) || Host(`${NGINX_HOST_WWW}`)
-            - traefik.http.routers.nginx_qa.entrypoints=websecure
-            - traefik.http.services.nginx_qa.loadbalancer.server.port=80
-            # redirect www to non-www
-            - traefik.http.middlewares.mywwwredirect.redirectregex.regex=^https://www\.(.*)
-            - traefik.http.middlewares.mywwwredirect.redirectregex.replacement=https://$${1}
-            - traefik.http.routers.nginx_qa.middlewares=mywwwredirect
-        networks:
-            - api_net
-
-    mariadbapi:
-        image: mariadb:latest
-        container_name: mariadbapi
-        restart: always
+            POSTGRES_DB: $POSTGRES_DB
+            POSTGRES_USER: $POSTGRES_USER
+            POSTGRES_PASSWORD: $POSTGRES_PASSWORD
         ports:
-            - 3307:3306
-        environment:
-            MARIADB_ROOT_PASSWORD: $DB_PASSWORD
-            MARIADB_DATABASE: $DB_DATABASE
-            MARIADB_USER: $DB_USERNAME
-            MARIADB_PASSWORD: $DB_PASSWORD
-            APP_DB_HOST: $ADMINER_HOST
-            APP_DB_USER: $DB_USERNAME
-            APP_DB_PASSWD: $DB_PASSWORD
+            - "5432:5432"
         volumes:
-            - ./dbdata:/var/lib/mysql
-        labels:
-            - traefik.enable=true
-            - traefik.tcp.routers.mariadbapi.rule=HostSNI(`*`)
-            - traefik.tcp.services.mariadbapi.loadbalancer.server.port=3306
-            - traefik.tcp.routers.mariadbapi.entrypoints=mariadbapi
+            - squash-tm-db:/var/lib/postgresql/data
         networks:
-            - api_net
+            - qa_net
 
-    adminerapi:
-        image: adminer
-        container_name: adminerapi
-        restart: always
+    ### Squash TM Web UI
+    squash-tm:
+        container_name: squash-tm
+        image: squashtest/squash:11.0.0
+        depends_on:
+            - squash-tm-pg
+        restart: unless-stopped
+        environment:
+            SPRING_PROFILES_ACTIVE: postgresql
+            SPRING_DATASOURCE_URL: jdbc:postgresql://squash-tm-pg:5432/${POSTGRES_DB}
+            SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+            SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+        volumes:
+            - squash-tm-logs:/opt/squash-tm/logs
         labels:
             - traefik.enable=true
-            - traefik.http.routers.adminerapi.tls=true
-            - traefik.http.routers.adminerapi.rule=Host(`${ADMINER_HOST}`)
-            - traefik.http.routers.adminerapi.entrypoints=websecure
-        depends_on:
-            - mariadbapi
+            - traefik.http.routers.squash-tm.rule=Host(`${SQUASH_UI_HOST}`)
+            - traefik.http.routers.squash-tm.entrypoints=websecure
+            - traefik.http.routers.squash-tm.tls=true
+            - traefik.http.services.squash-tm.loadbalancer.server.port=8080
         networks:
-            - api_net
+            - qa_net
+
+    ### Squash Orchestrator
+    orchestrator:
+        container_name: squash-orchestrator
+        image: squashtest/squash-orchestrator:latest
+        restart: unless-stopped
+        volumes:
+            - ./data/trusted_key.pub:/etc/squashtf/squash.pub:ro
+            # license bind is optional for community version
+        labels:
+            - traefik.enable=true
+            - traefik.http.routers.orchestrator.rule=Host(`${SQUASH_ORCHESTRATOR_HOST}`)
+            - traefik.http.routers.orchestrator.entrypoints=websecure
+            - traefik.http.routers.orchestrator.tls=true
+            - traefik.http.services.orchestrator.loadbalancer.server.port=7775
+        networks:
+            - qa_net
+
+volumes:
+    squash-tm-logs:
+    squash-tm-db:
 
 networks:
-    api_net:
+    qa_net:
         name: "proxy"
         external: true
 
