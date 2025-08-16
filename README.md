@@ -1,6 +1,6 @@
 work-in-progress project to learn and integrate [Squash TM & Squash Orchestrator](https://tm-fr.doc.squashtest.com/latest/)
 
-<img width="1467" height="935" alt="test-cases-squashtm" src="https://github.com/user-attachments/assets/03d0fcf7-c61f-4bfe-ace0-63ad54c12ef0" />
+<img width="1615" height="839" alt="squashtm-report" src="https://github.com/user-attachments/assets/c1537fb3-4a5e-429e-8216-0d51d65e75fa" />
 
 using a sample application built with API Platform as the test subject
 
