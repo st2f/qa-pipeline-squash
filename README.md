@@ -1,3 +1,5 @@
+[![Squash TM CI/CD w/ docker](https://github.com/st2f/qa-pipeline-squash/actions/workflows/main.yml/badge.svg)](https://github.com/st2f/qa-pipeline-squash/actions/workflows/main.yml)
+
 # Squash TM / Orchestrator POC
 
 This is a **work-in-progress project** to explore and integrate Squash TM and Squash Orchestrator for test management and automation.

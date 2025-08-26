@@ -6,6 +6,7 @@
 .DS_Store
 .env
 .env.backup
+.env.squash-deploy
 .env.production
 .phpactor.json
 .phpunit.result.cache
