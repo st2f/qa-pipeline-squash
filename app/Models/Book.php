@@ -11,19 +11,29 @@ use ApiPlatform\Metadata\Post;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+#[Patch(middleware: 'auth:sanctum')]
+#[Post(middleware: 'auth:sanctum')]
+#[Delete(middleware: 'auth:sanctum')]
 #[ApiResource(
-    paginationItemsPerPage: 10,
     operations: [
         new GetCollection(),
         new Get(),
-        new Post(),
-        new Patch(),
-        new Delete()
+//        new Post(),
+//        new Patch(),
+//        new Delete()
     ],
+    paginationItemsPerPage: 10,
 )]
 class Book extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'author', 'published_at', 'description'];
+    protected $fillable = [
+        'title',
+        'author',
+        'description',
+        'isbn',
+        'publication_date',
+    ];
+
 }
